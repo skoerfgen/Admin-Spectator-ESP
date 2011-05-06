@@ -1,6 +1,6 @@
 /* AMX Mod X - Script
 *
-*	Admin Spectator ESP v1.2f
+*	Admin Spectator ESP v1.2g
 *	Copyright (C) 2006 by KoST
 *
 *	this plugin along with its compiled version can de downloaded here:
@@ -44,7 +44,7 @@
 //--------------------------------------------------------------------------------------------------
 
 #define PLUGIN "Admin Spectator ESP"
-#define VERSION "1.2f"
+#define VERSION "1.2g"
 #define AUTHOR "KoST"
 
 enum {
@@ -172,8 +172,10 @@ public menu_esp(id,key){
 public event_Damage(id){
 	if (id>0) {
 		new attacker=get_user_attacker(id)
-		if (view_target[attacker]==id){
-			damage_done_to[attacker]=id
+		if (attacker>0){
+			if (view_target[attacker]==id){
+				damage_done_to[attacker]=id
+			}
 		}
 	}
 	return PLUGIN_CONTINUE
