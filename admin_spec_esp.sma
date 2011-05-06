@@ -1,6 +1,6 @@
 /* AMX Mod X - Script
 *
-*	Admin Spectator ESP v1.1
+*	Admin Spectator ESP v1.2b
 *	Copyright (C) 2006 by KoST
 *
 *	this plugin along with its compiled version can de downloaded here:
@@ -44,7 +44,7 @@
 //--------------------------------------------------------------------------------------------------
 
 #define PLUGIN "Admin Spectator ESP"
-#define VERSION "1.1"
+#define VERSION "1.2b"
 #define AUTHOR "KoST"
 
 enum {
@@ -93,6 +93,13 @@ public plugin_init(){
 	register_cvar("esp","1")
 	register_cvar("esp_timer","0.3")
 	register_cvar("esp_allow_all","0")
+	register_cvar("esp_disable_default_keys","0")
+	
+	// client commands
+	register_clcmd("esp_menu","cmd_esp_menu",ADMIN_ALL,"Shows ESP Menu")
+	register_clcmd("esp_toggle","cmd_esp_toggle",ADMIN_ALL,"Toggle ESP on/off")
+	register_clcmd("say /esp_menu","cmd_esp_menu",ADMIN_ALL,"Shows ESP Menu")
+	register_clcmd("say /esp_toggle","cmd_esp_toggle",ADMIN_ALL,"Toggle ESP on/off")
 	
 	// events
 	register_event("SpecHealth2","spec_target","bd")
@@ -109,22 +116,39 @@ public plugin_init(){
 	set_task(1.0,"esp_timer")
 } 
 
+
+public cmd_esp_menu(id){
+	if (admin[id] && get_cvar_num("esp")==1){
+		show_esp_menu(id)
+	}
+}
+
+public cmd_esp_toggle(id){
+	if (admin[id] && get_cvar_num("esp")==1){
+		change_esp_status(id,!admin_options[id][0])
+	}
+}
+
 public show_esp_menu(id){
 	is_in_menu[id]=true
 	new menu[301]
 	new keys=MENU_KEY_0|MENU_KEY_1|MENU_KEY_2|MENU_KEY_3|MENU_KEY_4|MENU_KEY_5|MENU_KEY_6|MENU_KEY_7|MENU_KEY_8|MENU_KEY_9
-	new onoff[2][8]={{"\roff\w"},{"\yon\w"}} // \r=red \y=yellow \w white
-	format(menu, 300, "Admin Specator ESP^nis %s (use move forwards/backwards to switch)^n^n1. Line is %s^n2. Box is %s^n3. Name is %s^n4. Health/Armor is %s^n5. Weapon is %s^n6. Clip/Ammo is %s^n7. Distance is %s^n8. Show TeamMates is %s^n9. Show AimVector is %s^n^n0. Exit",
-		onoff[admin_options[id][ESP_ON]],
-		onoff[admin_options[id][ESP_LINE]],
-		onoff[admin_options[id][ESP_BOX]],
-		onoff[admin_options[id][ESP_NAME]],
-		onoff[admin_options[id][ESP_HEALTH_ARMOR]],
-		onoff[admin_options[id][ESP_WEAPON]],
-		onoff[admin_options[id][ESP_CLIP_AMMO]],
-		onoff[admin_options[id][ESP_DISTANCE]],
-		onoff[admin_options[id][ESP_TEAM_MATES]],
-		onoff[admin_options[id][ESP_AIM_VEC]])
+	new onoff[2][]={{"\roff\w"},{"\yon\w"}} // \r=red \y=yellow \w white
+	new text[2][]={{"(use move forward/backward to switch on/off)"},{"(use esp_toggle command to toggle)"}} // \r=red \y=yellow \w white
+	new text_index=get_cvar_num("esp_disable_default_keys")
+	if (text_index!=1) text_index=0
+	format(menu, 300, "Admin Specator ESP^nis %s %s^n^n1. Line is %s^n2. Box is %s^n3. Name is %s^n4. Health/Armor is %s^n5. Weapon is %s^n6. Clip/Ammo is %s^n7. Distance is %s^n8. Show TeamMates is %s^n9. Show AimVector is %s^n^n0. Exit",
+	onoff[admin_options[id][ESP_ON]],
+	text[text_index],
+	onoff[admin_options[id][ESP_LINE]],
+	onoff[admin_options[id][ESP_BOX]],
+	onoff[admin_options[id][ESP_NAME]],
+	onoff[admin_options[id][ESP_HEALTH_ARMOR]],
+	onoff[admin_options[id][ESP_WEAPON]],
+	onoff[admin_options[id][ESP_CLIP_AMMO]],
+	onoff[admin_options[id][ESP_DISTANCE]],
+	onoff[admin_options[id][ESP_TEAM_MATES]],
+	onoff[admin_options[id][ESP_AIM_VEC]])
 	show_menu(id,keys,menu)
 	
 	return PLUGIN_HANDLED
@@ -138,7 +162,7 @@ public menu_esp(id,key){
 	// toggle esp options
 	if (admin_options[id][key+1]){
 		admin_options[id][key+1]=false
-	}else{
+		}else{
 		admin_options[id][key+1]=true
 	}
 	show_esp_menu(id)
@@ -146,9 +170,11 @@ public menu_esp(id,key){
 }
 
 public event_Damage(id){
-	new attacker=get_user_attacker(id)
-	if (view_target[attacker]==id){
-		damage_done_to[attacker]=id
+	if (id>0) {
+		new attacker=get_user_attacker(id)
+		if (view_target[attacker]==id){
+			damage_done_to[attacker]=id
+		}
 	}
 	return PLUGIN_CONTINUE
 }
@@ -160,16 +186,18 @@ public spec_mode(id){
 	
 	if(equal(specMode,"#Spec_Mode4")){
 		first_person[id]=true
-	}else{
+		}else{
 		first_person[id]=false
 	}
 	return PLUGIN_CONTINUE
 }
 
 public spec_target(id){
-	new target=read_data(2)
-	if (target!=0){
-		spec[id]=target
+	if (id>0){
+		new target=read_data(2)
+		if (target!=0){
+			spec[id]=target
+		}
 	}
 	return PLUGIN_CONTINUE
 }
@@ -180,7 +208,7 @@ public client_putinserver(id){
 		admin[id]=true
 		init_admin_options(id)
 		
-	}else{
+		}else{
 		admin[id]=false
 	}
 }
@@ -196,34 +224,47 @@ public client_disconnect(id){
 	admin[id]=false
 }
 
+public change_esp_status(id,bool:on){
+	if (on){
+		admin_options[id][0]=true
+		if (!is_in_menu[id]) client_print(id,print_chat,"[%s] ON",PLUGIN)
+		if (is_in_menu[id]) show_esp_menu(id)
+	}else{
+		admin_options[id][0]=false
+		if (!is_in_menu[id]) client_print(id,print_chat,"[%s] OFF",PLUGIN)
+		if (is_in_menu[id]) show_esp_menu(id)
+	}
+}
+
 public client_PreThink(id){
 	if (!is_user_connected(id)) return PLUGIN_CONTINUE
 	
 	new button=get_user_button(id)
+	if (button==0) return PLUGIN_CONTINUE // saves a lot of cpu
+	
 	new oldbutton=get_user_oldbutton(id)
 	
 	if (button & IN_DUCK){
 		ducking[id]=true
-	}else{
+		}else{
 		ducking[id]=false
 	}
 	
-	if (button & IN_RELOAD && !(oldbutton & IN_RELOAD) && (admin[id] && first_person[id] && !is_user_alive(id))){
-		show_esp_menu(id)
+	if ((get_cvar_num("esp")==1) && (get_cvar_num("esp_disable_default_keys")!=1)){
+		if (admin[id]){
+			if (first_person[id] && !is_user_alive(id)){
+				if ((button & IN_RELOAD) && !(oldbutton & IN_RELOAD)){
+					show_esp_menu(id)
+				}
+				if ((button & IN_FORWARD)  && !(oldbutton & IN_FORWARD) && !admin_options[id][0]){
+					change_esp_status(id,true)
+				}
+				if ((button & IN_BACK)  && !(oldbutton & IN_BACK) && admin_options[id][0]){
+					change_esp_status(id,false)
+				}
+			}
+		}
 	}
-	
-	if (button & IN_FORWARD && (!admin_options[id][0] && admin[id] && first_person[id] && !is_user_alive(id))){
-		admin_options[id][0]=true
-		client_print(id,print_chat,"[%s] ON",PLUGIN)
-		if (is_in_menu[id]) show_esp_menu(id)
-	}
-
-	if (button & IN_BACK && (admin_options[id][0] && admin[id] && first_person[id] && !is_user_alive(id))){
-		admin_options[id][0]=false
-		client_print(id,print_chat,"[%s] OFF",PLUGIN)
-		if (is_in_menu[id]) show_esp_menu(id)
-	}
-	
 	return PLUGIN_CONTINUE
 }
 
@@ -249,14 +290,14 @@ public esp_timer(){
 	
 	for (new i=1;i<=max_players;i++){ // loop through players
 		
-		if (admin_options[i][ESP_ON] && first_person[i] && is_user_connected(i) && admin[i] && (!is_user_alive(i))){ // :)
-		
+		if (admin_options[i][ESP_ON] && first_person[i] && is_user_connected(i) && admin[i] && (!is_user_alive(i)) && (spec[i]>0)){ // :)
+			
 			new spec_id=spec[i]
 			new Float:my_origin[3] 
 			entity_get_vector(i,EV_VEC_origin,my_origin) // get origin of spectating admin
 			new my_team
 			my_team=get_team(spec_id) // get team of spectated :)
-
+			
 			new Float:smallest_angle=180.0 
 			new smallest_id=0
 			new Float:xp=2.0,Float:yp=2.0 // x,y of hudmessage
@@ -270,12 +311,12 @@ public esp_timer(){
 							// if the target is in the other team and not spectator
 							
 							if ((my_team!=target_team || admin_options[i][ESP_TEAM_MATES]) && (target_team==1 || target_team==2)){
-
+								
 								new Float:target_origin[3]
 								// get origin of target
 								entity_get_vector(s,EV_VEC_origin,target_origin)
 								
-
+								
 								// get distance from me to target
 								new Float:distance=vector_distance(my_origin,target_origin)
 								
@@ -285,7 +326,7 @@ public esp_timer(){
 									if (distance<2040.0){
 										// calculate width according to distance
 										width=(255-floatround(distance/8.0))/3
-									}else{
+										}else{
 										width=1
 									}	
 									// create temp_ent
@@ -308,13 +349,13 @@ public esp_timer(){
 								new Float:scaled_bone_len
 								if (ducking[spec_id]){
 									scaled_bone_len=distance_to_hitpoint/distance*(50.0-18.0)
-								}else{
+									}else{
 									scaled_bone_len=distance_to_hitpoint/distance*50.0
 								}
 								scaled_bone_len=distance_to_hitpoint/distance*50.0
 								
 								new Float:scaled_bone_width=distance_to_hitpoint/distance*150.0
-
+								
 								new Float:v_bone_start[3],Float:v_bone_end[3]
 								new Float:offset_vector[3]
 								// get the point 10.0 units away from wall
@@ -326,7 +367,7 @@ public esp_timer(){
 								
 								if (ducking[spec_id]){
 									eye_level[2]+=12.3
-								}else{
+									}else{
 									eye_level[2]+=17.5
 								}
 								
@@ -337,7 +378,7 @@ public esp_timer(){
 								copyVec(offset_vector,v_bone_start)
 								copyVec(offset_vector,v_bone_end)
 								v_bone_end[2]-=scaled_bone_len
-
+								
 								new Float:distance_target_hitpoint=distance-distance_to_hitpoint
 								
 								new actual_bright=255
@@ -347,13 +388,13 @@ public esp_timer(){
 									if (distance_target_hitpoint<2040.0){
 										actual_bright=(255-floatround(distance_target_hitpoint/12.0))
 										
-									}else{
+										}else{
 										actual_bright=85
 									}	
 									new color
 									if (distance_to_hitpoint!=distance){ // if no line of sight
 										color=0
-									}else{ // if line of sight
+										}else{ // if line of sight
 										color=target_team
 									}
 									
@@ -367,7 +408,7 @@ public esp_timer(){
 								
 								if (admin_options[i][ESP_AIM_VEC] || admin_options[i][ESP_NAME] || admin_options[i][ESP_HEALTH_ARMOR] || admin_options[i][ESP_WEAPON] || admin_options[i][ESP_CLIP_AMMO] || admin_options[i][ESP_DISTANCE]){
 									
-
+									
 									new Float:ret[2]
 									new Float:x_angle=get_screen_pos(spec_id,v_middle,ret)
 									
@@ -402,7 +443,7 @@ public esp_timer(){
 					format(name,36,"[%s]^n",tmp)
 				}
 				
-
+				
 				new health[25]=""
 				if (admin_options[i][ESP_HEALTH_ARMOR]){
 					new hp=get_user_health(smallest_id)
@@ -485,20 +526,20 @@ public Float:get_screen_pos_y(Float:v_target[3],Float:aim[3]){
 	
 	// rotate vector about z-axis directly over the direction vector (to get height angle)
 	rotateVectorZ(v_target,aim,target)
-
+	
 	// get angle between aim vector and target vector
 	new Float:y_angle=floatacos(vectorProduct(aim,target)/(getVecLen(aim)*getVecLen(target)),1) // get angle between vectors
-
+	
 	new Float:y_pos
 	new Float:norm_target[3],Float:norm_aim[3]
-
+	
 	// get normalized target and aim vectors
 	normalize(v_target,norm_target,1.0)
 	normalize(aim,norm_aim,1.0)
 	
 	//since the 'angle between vectors' formula returns always positive values
 	if (norm_target[2]<norm_aim[2]) y_angle*=-1 //make signed
-
+	
 	if (y_angle>=-45.0 && y_angle<=45.0){ // if in fov of 90
 		y_pos=1.0-(floattan(y_angle,degrees)+1.0)/2.0 // calulate y_pos of hudmessage
 		if (y_pos>=0.0 && y_pos<=1.0) return y_pos
@@ -591,18 +632,6 @@ public addVec(Float:Vec1[3],Float:Vec2[3]){
 // Temporary Entities ------------------------------------------------------------------------------
 // there is a list of much more temp entities at: http://djeyl.net/forum/index.php?s=80ec5b9163006b5cbd0a51dd198e563a&act=Attach&type=post&id=290870
 // all messages are sent with MSG_ONE_UNRELIABLE flag to avoid overflow in case of very low esp_timer setting and much targets
-
-public make_TE_IMPLOSION(id,Float:Vec[3]){
-	message_begin(MSG_ONE_UNRELIABLE ,SVC_TEMPENTITY,{0,0,0},id) //message begin
-	write_byte(14)
-	write_coord(floatround(Vec[0])) // start position
-	write_coord(floatround(Vec[1]))
-	write_coord(floatround(Vec[2]))
-	write_byte(255) // radius
-	write_byte(10) // count
-	write_byte(floatround(get_cvar_float("esp_timer")*10)) // life in 0.1's
-	message_end()
-}
 
 public make_TE_BEAMPOINTS(id,color,Float:Vec1[3],Float:Vec2[3],width,target_team,brightness){
 	message_begin(MSG_ONE_UNRELIABLE ,SVC_TEMPENTITY,{0,0,0},id) //message begin
