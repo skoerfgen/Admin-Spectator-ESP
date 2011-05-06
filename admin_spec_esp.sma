@@ -1,6 +1,6 @@
 /* AMX Mod X - Script
 *
-*	Admin Spectator ESP v1.2e
+*	Admin Spectator ESP v1.2f
 *	Copyright (C) 2006 by KoST
 *
 *	this plugin along with its compiled version can de downloaded here:
@@ -44,7 +44,7 @@
 //--------------------------------------------------------------------------------------------------
 
 #define PLUGIN "Admin Spectator ESP"
-#define VERSION "1.2e"
+#define VERSION "1.2f"
 #define AUTHOR "KoST"
 
 enum {
@@ -439,7 +439,7 @@ public esp_timer(){
 			}
 			if (xp>0.0 && xp<=1.0 && yp>0.0 && yp<=1.0){ // if in visible range
 				// show the player info
-				set_hudmessage(255, 255, 0, floatabs(xp), floatabs(yp), 0, 0.0, get_cvar_float("esp_timer"))
+				set_hudmessage(255, 255, 0, floatabs(xp), floatabs(yp), 0, 0.0, get_cvar_float("esp_timer"), 0.0, 0.0, 2)
 				
 				new name[37]=""
 				new tmp[33]
