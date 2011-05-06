@@ -1,6 +1,6 @@
 /* AMX Mod X - Script
 *
-*	Admin Spectator ESP v1.2i
+*	Admin Spectator ESP v1.3
 *	Copyright (C) 2006 by KoST
 *
 *	this plugin along with its compiled version can de downloaded here:
@@ -20,6 +20,7 @@
 *  You should have received a copy of the GNU General Public License
 *  along with this program; if not, write to the Free Software
 *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*  or download here: http://www.gnu.org/licenses/gpl.txt
 *
 *  In addition, as a special exception, the author gives permission to
 *  link the code of this program with the Half-Life Game Engine ("HL
@@ -44,7 +45,7 @@
 //--------------------------------------------------------------------------------------------------
 
 #define PLUGIN "Admin Spectator ESP"
-#define VERSION "1.2i"
+#define VERSION "1.3"
 #define AUTHOR "KoST"
 
 enum {
@@ -87,24 +88,30 @@ public plugin_precache(){
 
 public plugin_init(){
 	register_plugin(PLUGIN,VERSION,AUTHOR)
-	server_print("^n^t%s v%s by %s^n",PLUGIN,VERSION,AUTHOR)
+	server_print("^n^t%s v%s, Copyright (C) 2006 by %s^n",PLUGIN,VERSION,AUTHOR)
 	
 	// cvars
 	register_cvar("esp","1")
 	register_cvar("esp_timer","0.3")
 	register_cvar("esp_allow_all","0")
 	register_cvar("esp_disable_default_keys","0")
+	register_cvar("aesp_version",VERSION,FCVAR_SERVER|FCVAR_UNLOGGED|FCVAR_SPONLY)
 	
 	// client commands
 	register_clcmd("esp_menu","cmd_esp_menu",REQUIRED_ADMIN_LEVEL,"Shows ESP Menu")
 	register_clcmd("esp_toggle","cmd_esp_toggle",REQUIRED_ADMIN_LEVEL,"Toggle ESP on/off")
 	register_clcmd("say /esp_menu","cmd_esp_menu",REQUIRED_ADMIN_LEVEL,"Shows ESP Menu")
 	register_clcmd("say /esp_toggle","cmd_esp_toggle",REQUIRED_ADMIN_LEVEL,"Toggle ESP on/off")
+	register_clcmd("esp_settings","cmd_esp_settings",REQUIRED_ADMIN_LEVEL," ESP adasdsassdasd")
+	
 	
 	// events
+	register_event("StatusValue","spec_target","bd","1=2")
 	register_event("SpecHealth2","spec_target","bd")
 	register_event("TextMsg","spec_mode","b","2&#Spec_Mode")
 	register_event("Damage", "event_Damage", "b", "2!0", "3=0", "4!0")
+	register_event("ResetHUD", "reset_hud_alive", "be")
+	
 	
 	// menu
 	new keys=MENU_KEY_0|MENU_KEY_1|MENU_KEY_2|MENU_KEY_3|MENU_KEY_4|MENU_KEY_5|MENU_KEY_6|MENU_KEY_7|MENU_KEY_8|MENU_KEY_9
@@ -116,6 +123,25 @@ public plugin_init(){
 	set_task(1.0,"esp_timer")
 } 
 
+public reset_hud_alive(id){
+	spec[id]=0
+	return PLUGIN_CONTINUE
+}
+
+public cmd_esp_settings(id){
+	if (admin[id]){
+		new out[11]
+		read_argv(1,out,10)
+		new len=strlen(out) 	
+		for (new i=0;i<len;i++){
+			if (out[i]=='1'){
+				admin_options[id][i]=true
+			}else{
+				admin_options[id][i]=false
+			}
+		}
+	}
+}
 
 public cmd_esp_menu(id){
 	if (admin[id] && get_cvar_num("esp")==1){
@@ -216,13 +242,61 @@ public client_putinserver(id){
 }
 
 public init_admin_options(id){
+	
 	for (new i=0;i<10;i++){
 		admin_options[id][i]=true
 	}
 	admin_options[id][ESP_TEAM_MATES]=false
+	load_vault_data(id)
+}
+
+public save2vault(id){
+	if (admin[id]){
+		new authid[35]
+		get_user_authid (id,authid,34) 
+		new tmp[11]
+	
+		for (new s=0;s<10;s++){
+		
+			if (admin_options[id][s]){
+				tmp[s]='1';
+			}else{
+				tmp[s]='0';
+			}
+		}
+		tmp[10]=0
+
+		//server_print("STEAMID: %s OPTIONS: %s",authid,tmp);
+		new key[41]
+		format(key,40,"AESP_%s",authid) 
+		
+		set_vaultdata(key,tmp)
+	}
+}
+
+public load_vault_data(id){
+	if (admin[id]){
+		new data[11]
+		new authid[35]
+		get_user_authid (id,authid,34)
+		new key[41]
+		format(key,40,"AESP_%s",authid) 
+		get_vaultdata(key,data,10)
+		if (strlen(data)>0){
+			for (new s=0;s<10;s++){
+				if (data[s]=='1'){
+					admin_options[id][s]=true
+				}else{
+					admin_options[id][s]=false
+				}
+			}
+		}
+	}	
+	
 }
 
 public client_disconnect(id){
+	save2vault(id)
 	admin[id]=false
 	spec[id]=0
 }
