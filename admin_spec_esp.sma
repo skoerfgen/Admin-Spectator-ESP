@@ -1,6 +1,6 @@
 /* AMX Mod X - Script
 *
-*	Admin Spectator ESP v1.2c
+*	Admin Spectator ESP v1.2e
 *	Copyright (C) 2006 by KoST
 *
 *	this plugin along with its compiled version can de downloaded here:
@@ -44,7 +44,7 @@
 //--------------------------------------------------------------------------------------------------
 
 #define PLUGIN "Admin Spectator ESP"
-#define VERSION "1.2c"
+#define VERSION "1.2e"
 #define AUTHOR "KoST"
 
 enum {
@@ -291,7 +291,7 @@ public esp_timer(){
 	
 	for (new i=1;i<=max_players;i++){ // loop through players
 		
-		if (admin_options[i][ESP_ON] && first_person[i] && is_user_connected(i) && admin[i] && (!is_user_alive(i)) && (spec[i]>0)){ // :)
+		if (admin_options[i][ESP_ON] && first_person[i] && is_user_connected(i) && admin[i] && (!is_user_alive(i)) && (spec[i]>0) && is_user_alive(spec[i])){ // :)
 			
 			new spec_id=spec[i]
 			new Float:my_origin[3] 
@@ -311,7 +311,7 @@ public esp_timer(){
 						if (spec_id!=s){ // do not target myself
 							// if the target is in the other team and not spectator
 							
-							if ((my_team!=target_team || admin_options[i][ESP_TEAM_MATES]) && (target_team==1 || target_team==2)){
+							if ((my_team!=target_team && (target_team==1 || target_team==2) || admin_options[i][ESP_TEAM_MATES])){
 								
 								new Float:target_origin[3]
 								// get origin of target
@@ -430,6 +430,10 @@ public esp_timer(){
 					}
 				}
 			} // inner player loop end
+			if (!is_user_alive(smallest_id)) {
+				smallest_id=0
+				xp=-1.0
+			}
 			if (smallest_id>0 && admin_options[i][ESP_AIM_VEC]){
 				draw_aim_vector(i,smallest_id,2000)
 			}
