@@ -1,6 +1,6 @@
 /* AMX Mod X - Script
 *
-*	Admin Spectator ESP v1.2g
+*	Admin Spectator ESP v1.2i
 *	Copyright (C) 2006 by KoST
 *
 *	this plugin along with its compiled version can de downloaded here:
@@ -44,7 +44,7 @@
 //--------------------------------------------------------------------------------------------------
 
 #define PLUGIN "Admin Spectator ESP"
-#define VERSION "1.2g"
+#define VERSION "1.2i"
 #define AUTHOR "KoST"
 
 enum {
@@ -96,10 +96,10 @@ public plugin_init(){
 	register_cvar("esp_disable_default_keys","0")
 	
 	// client commands
-	register_clcmd("esp_menu","cmd_esp_menu",ADMIN_ALL,"Shows ESP Menu")
-	register_clcmd("esp_toggle","cmd_esp_toggle",ADMIN_ALL,"Toggle ESP on/off")
-	register_clcmd("say /esp_menu","cmd_esp_menu",ADMIN_ALL,"Shows ESP Menu")
-	register_clcmd("say /esp_toggle","cmd_esp_toggle",ADMIN_ALL,"Toggle ESP on/off")
+	register_clcmd("esp_menu","cmd_esp_menu",REQUIRED_ADMIN_LEVEL,"Shows ESP Menu")
+	register_clcmd("esp_toggle","cmd_esp_toggle",REQUIRED_ADMIN_LEVEL,"Toggle ESP on/off")
+	register_clcmd("say /esp_menu","cmd_esp_menu",REQUIRED_ADMIN_LEVEL,"Shows ESP Menu")
+	register_clcmd("say /esp_toggle","cmd_esp_toggle",REQUIRED_ADMIN_LEVEL,"Toggle ESP on/off")
 	
 	// events
 	register_event("SpecHealth2","spec_target","bd")
@@ -172,7 +172,7 @@ public menu_esp(id,key){
 public event_Damage(id){
 	if (id>0) {
 		new attacker=get_user_attacker(id)
-		if (attacker>0){
+		if (attacker>0 && attacker<=max_players){ 
 			if (view_target[attacker]==id){
 				damage_done_to[attacker]=id
 			}
@@ -313,7 +313,7 @@ public esp_timer(){
 						if (spec_id!=s){ // do not target myself
 							// if the target is in the other team and not spectator
 							
-							if ((my_team!=target_team && (target_team==1 || target_team==2) || admin_options[i][ESP_TEAM_MATES])){
+							if (((my_team!=target_team && (target_team==1 || target_team==2)) || admin_options[i][ESP_TEAM_MATES])){
 								
 								new Float:target_origin[3]
 								// get origin of target
