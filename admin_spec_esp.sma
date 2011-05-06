@@ -1,6 +1,6 @@
 /* AMX Mod X - Script
 *
-*	Admin Spectator ESP v1.2b
+*	Admin Spectator ESP v1.2c
 *	Copyright (C) 2006 by KoST
 *
 *	this plugin along with its compiled version can de downloaded here:
@@ -44,7 +44,7 @@
 //--------------------------------------------------------------------------------------------------
 
 #define PLUGIN "Admin Spectator ESP"
-#define VERSION "1.2b"
+#define VERSION "1.2c"
 #define AUTHOR "KoST"
 
 enum {
@@ -222,6 +222,7 @@ public init_admin_options(id){
 
 public client_disconnect(id){
 	admin[id]=false
+	spec[id]=0
 }
 
 public change_esp_status(id,bool:on){
